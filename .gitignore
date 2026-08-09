@@ -1,0 +1,76 @@
+# ========================
+# Virtual Environments
+# ========================
+.venv/
+venv/
+ENV/
+env/
+
+# ========================
+# Python Caching
+# ========================
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+*.egg-info/
+*.egg
+dist/
+build/
+
+# ========================
+# DVC Local Files & Cache
+# ========================
+.dvc/cache/
+.dvc/tmp/
+.dvc/config.local
+
+# ========================
+# Generated Data Files
+# (Rebuilt by pipeline)
+# ========================
+data/online_store.db
+data/churn_features.parquet
+data/baseline_probabilities.npy
+data/prediction_logs.csv
+data/registry.db
+
+# ========================
+# IDE & OS Files
+# ========================
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ========================
+# Testing & Coverage
+# ========================
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# ========================
+# Docker Volumes (local)
+# ========================
+docker-volumes/
+
+# ========================
+# Misc
+# ========================
+*.log
+*.bak
+*.tmp
+.env
+.env.local
+uv.lock

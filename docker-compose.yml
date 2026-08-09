@@ -1,0 +1,114 @@
+version: '3.8'
+
+services:
+  minio:
+    image: minio/minio:latest
+    container_name: mlops-minio
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    command: server /data --console-address ":9001"
+    volumes:
+      - minio_data:/data
+
+  minio-create-bucket:
+    image: minio/mc:latest
+    container_name: mlops-minio-create-bucket
+    depends_on:
+      - minio
+    entrypoint: >
+      /bin/sh -c "
+      until (/usr/bin/mc alias set myminio http://minio:9000 minioadmin minioadmin) do echo 'Waiting for MinIO...' && sleep 1; done;
+      /usr/bin/mc mb myminio/dvc-bucket || true;
+      /usr/bin/mc policy set public myminio/dvc-bucket || true;
+      /usr/bin/mc mb myminio/mlflow-artifacts || true;
+      /usr/bin/mc policy set public myminio/mlflow-artifacts || true;
+      exit 0;
+      "
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: mlops-postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: mlops_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  mlflow:
+    image: ghcr.io/mlflow/mlflow:latest
+    container_name: mlops-mlflow
+    ports:
+      - "5000:5000"
+    depends_on:
+      - postgres
+      - minio
+    environment:
+      - AWS_ACCESS_KEY_ID=minioadmin
+      - AWS_SECRET_ACCESS_KEY=minioadmin
+      - MLFLOW_S3_ENDPOINT_URL=http://minio:9000
+      - MLFLOW_S3_IGNORE_TLS=true
+    command: >
+      sh -c "pip install psycopg2-binary boto3 && mlflow server --backend-store-uri postgresql://postgres:postgres@postgres:5432/mlops_db --default-artifact-root s3://mlflow-artifacts --host 0.0.0.0 --port 5000 --allowed-hosts '*'"
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: mlops-api
+    ports:
+      - "8000:8000"
+    depends_on:
+      - mlflow
+      - postgres
+      - minio
+    volumes:
+      - ./data:/workspace/data
+      - ./feature_store:/workspace/feature_store
+    environment:
+      - AWS_ACCESS_KEY_ID=minioadmin
+      - AWS_SECRET_ACCESS_KEY=minioadmin
+      - MLFLOW_S3_ENDPOINT_URL=http://minio:9000
+      - MLFLOW_TRACKING_URI=http://mlflow:5000
+      - AWS_DEFAULT_REGION=us-east-1
+      - AWS_EC2_METADATA_DISABLED=true
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: mlops-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    depends_on:
+      - api
+    deploy:
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: 512M
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: mlops-grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    depends_on:
+      - prometheus
+    deploy:
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: 512M
+
+volumes:
+  minio_data:
+  postgres_data:
