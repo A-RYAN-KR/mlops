@@ -2,8 +2,6 @@
 
 <br>
 
-<img src="https://img.icons8.com/3d-fluency/94/signal-tower.png" width="80" />
-
 # Telco Customer Churn — MLOps Pipeline
 
 ### *End-to-End Machine Learning Operations on Your Local Machine*
