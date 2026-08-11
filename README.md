@@ -111,6 +111,12 @@ A production-grade, fully local MLOps platform that **trains**, **serves**, **mo
 
 ### System Architecture
 
+<div align="center">
+  <img src="assets/Architecture.png" alt="System Architecture" width="90%" />
+</div>
+
+<br>
+
 ```mermaid
 graph TB
     subgraph "<b>📦 Data Layer</b>"
